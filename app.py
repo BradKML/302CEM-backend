@@ -1,45 +1,115 @@
 # using flask_restful 
 import tweepy
+import pymysql
 from flask import Flask, jsonify, request 
+from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Resource, Api 
+import datetime
+from datetime import date
 
 # creating the flask app 
 app = Flask(__name__) 
-# creating an API object 
-api = Api(app) 
+def start_api(consumer_key, consumer_secret,
+  access_token, access_token_secret):
 
-# making a class for a particular resource 
-# the get, post methods correspond to get and post requests 
-# they are automatically mapped by flask_restful. 
-# other methods include put, delete, etc. 
-class Hello(Resource): 
+  auth = tweepy.OAuthHandler(consumer_key, consumer_secret)  
+  auth.set_access_token(access_token, access_token_secret)  
+  return tweepy.API(auth)
 
-	# corresponds to the GET request. 
-	# this function is called whenever there 
-	# is a GET request for this resource 
-	def get(self): 
+ck="DxHoukAprUS9cgUXR4yLPfy5n"
+cs="2s1fiLCR4QGdlBVkDPh0WQgGOWA6rmcFIE5wzY5nYa1AsSayn2"
+at="1207894049106956288-vVSh9pHeHm0GRKRXTNxnVVM9Ep1aiD"
+ats="FY40u4cNBixTBzl5n9lH4847IGz5vCbHSBbYH9BNrK2g1"
 
-		return jsonify({'message': 'hello world'}) 
+my_api = start_api(ck,cs,at,ats)
 
-	# Corresponds to POST request 
-	def post(self): 
-		
-		data = request.get_json()	 # status code 
-		return jsonify({'data': data}), 201
+idname = "Facebook"
+
+def get_user_info(api, name):
+    
+  user = api.get_user(screen_name = name) 
+  return [user.name, user.created_at.strftime('%Y-%m-%d')]
+
+print(get_user_info(my_api, idname))
+
+user, cre = get_user_info(my_api, idname)
+
+def get_daily_info(api, name):
+
+  user = api.get_user(screen_name = name)  
+  return [user.followers_count, user.friends_count,
+    user.statuses_count]
+
+print(get_daily_info(my_api, idname))
+
+followers, following, tweet =  get_daily_info(my_api, idname)
+
+#insert the data in the mysql
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:P@ssw0rd123@127.0.0.1/twitter'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+class Account_created(db.Model):
+    __tablename__ = 'Account_created'
+    id = db.Column('id', db.Integer, primary_key=True)
+    username = db.Column('username', db.String(50))
+    created_at = db.Column('created_at', db.DateTime)
+
+    def __init__(self, username, created_at):
+        self.username = username
+        self.created_at = created_at
 
 
-# another resource to calculate the square of a number
-class Square(Resource): 
+class Twitter(db.Model):
+    __tablename__ = 'Twitter'
+    id = db.Column('id', db.Integer, primary_key=True)
+    username = db.Column('username', db.String(50))
+    DATE = db.Column('DATE', db.Date)
+    followers_count = db.Column('followers_count', db.Integer)
+    following_count = db.Column('following_count', db.Integer)
+    tweet_count = db.Column('tweet_count', db.Integer)
 
-	def get(self, num): 
+    def __init__(self, username, DATE, followers_count, following_count, tweet_count):
+        self.username = username
+        self.DATE = DATE
+        self.followers_count = followers_count
+        self.following_count = following_count
+        self.tweet_count = tweet_count
 
-		return jsonify({'square': num**2}) 
+today = date.today()
+exists = db.session.query(Account_created.id).filter_by(username=user).scalar() is not None
+dateexist = db.session.query(Twitter.id).filter_by(DATE = today, username = user).scalar() is not None
+print (exists);
+print(dateexist);
 
+if(exists == False):
+ data = Account_created(user,cre)
+ db.session.add(data)
+ db.session.commit()
 
-# adding the defined resources along with their corresponding urls 
-api.add_resource(Hello, '/') 
-api.add_resource(square, '/square/<int:num>') 
+ insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet)
+ db.session.add(insdata)
+ db.session.commit()
+elif(dateexist == False):
+ insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet)
+ db.session.add(insdata)
+ db.session.commit()
 
+r = db.engine.execute('select username,DATE,followers_count,following_count,tweet_count from Twitter where username = "' + user + '" ORDER BY DATE DESC')
+
+x = [(a,b.strftime('%Y-%m-%d'),c,d,e) for (a,b,c,d,e) in r]
+
+y = [(x[i][2]-x[i-1][2],x[i][3]-x[i-1][3],x[i][4]-x[i-1][4])for i in range(len(x)-1)] + [(0,0,0)]
+
+z = [(x[i][0], x[i][1],
+  x[i][2], y[i][0],
+  x[i][3], y[i][1],
+  x[i][4], y[i][2])
+  for i in range(len(x))]
+
+print (z)
 
 # driver function 
 if __name__ == '__main__': 
