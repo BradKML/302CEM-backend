@@ -9,6 +9,7 @@ from datetime import date
 
 # creating the flask app 
 app = Flask(__name__) 
+
 def start_api(consumer_key, consumer_secret,
   access_token, access_token_secret):
 
@@ -23,8 +24,9 @@ ats="FY40u4cNBixTBzl5n9lH4847IGz5vCbHSBbYH9BNrK2g1"
 
 my_api = start_api(ck,cs,at,ats)
 
-idname = "Facebook"
+#idname = "Facebook"
 
+@app.route('/<name>')
 def get_user_info(api, name):
     
   user = api.get_user(screen_name = name) 
@@ -45,7 +47,6 @@ print(get_daily_info(my_api, idname))
 followers, following, tweet =  get_daily_info(my_api, idname)
 
 #insert the data in the mysql
-app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:P@ssw0rd123@127.0.0.1/twitter'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -112,7 +113,5 @@ z = [(x[i][0], x[i][1],
 print (z)
 
 # driver function 
-if __name__ == '__main__': 
-	# Bind to PORT if defined, otherwise default to 5000.
-	port = int(os.environ.get('PORT', 5000))
-	app.run(debug = True) 
+if __name__ == '__main__':
+    app.run(debug=True)
