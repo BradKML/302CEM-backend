@@ -95,7 +95,7 @@ elif(dateexist == False):
 
 r = db.engine.execute('select username,DATE,followers_count,following_count,tweet_count,like_count from Twitter where username = "' + user + '" ORDER BY DATE DESC')
 
-x = [(a,b.strftime('%Y-%m-%d'),c,d,e) for (a,b,c,d,e) in r]
+x = [(a,b.strftime('%Y-%m-%d'),c,d,e,f) for (a,b,c,d,e,f) in r]
 
 y = [(x[i][2]-x[i-1][2],x[i][3]-x[i-1][3],x[i][4]-x[i-1][4])for i in range(len(x)-1)] + [(0,0,0)]
 
