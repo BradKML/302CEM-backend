@@ -92,6 +92,9 @@ elif(dateexist == False):
  insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
  db.session.add(insdata)
  db.session.commit()
+elif(dateexist == True):
+ updatedata = Twitter.query.filter_by(username = user, DATE = today).update({"followers_count": (followers), "following_count": (following), "tweet_count": (tweet), "like_count": (like)})
+ db.session.commit()
 
 r = db.engine.execute('select username,DATE,followers_count,following_count,tweet_count,like_count from Twitter where username = "' + user + '" ORDER BY DATE DESC')
 
