@@ -80,21 +80,21 @@ def insert_data(name):
 
   if(exists == False):# create new information
     
-    data = Account_created(user,cre)
+    data = Account_created(info["username"],info["creation date"])
     db.session.add(data)
     db.session.commit()
     # the next three lines are used to add data into the database
-    insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
+    insdata = Twitter(info["username"],today.strftime('%Y-%m-%d'),info["followers count"],info["following count"],info["tweet count"],info["like count"])
     db.session.add(insdata)
     db.session.commit()
     
   elif(dateexist == False):#add a new day data
-   insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
+   insdata = Twitter(info["username"],today.strftime('%Y-%m-%d'),info["followers count"],info["following count"],info["tweet count"],info["like count"])
    db.session.add(insdata)
    db.session.commit()
   
   elif(dateexist == True):#update query when there has changes in that day data
-   updatedata = Twitter.query.filter_by(username = user, DATE = today).update({"followers_count": (followers), "following_count": (following), "tweet_count": (tweet), "like_count": (like)})
+   updatedata = Twitter.query.filter_by(username = user, DATE = today).update(username = info["username"], DATE = today).update({"followers_count": (info["followers count"]), "following_count": (info["following count"]),"tweet_count": (info["tweet count"]), "like_count": (info["like count"])})
    db.session.commit()
     
   # the followine line is used to get data from the database
