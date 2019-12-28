@@ -73,42 +73,49 @@ class Twitter(db.Model):
         self.following_count = following_count
         self.tweet_count = tweet_count
         self.like_count = like_count
+        
+def insert_data(name):
+  
+  today = date.today()
+  exists = db.session.query(Account_created.id).filter_by(username=user).scalar() is not None
+  dateexist = db.session.query(Twitter.id).filter_by(DATE = today, username = user).scalar() is not None
+  print (exists);
+  print(dateexist);
 
-today = date.today()
-exists = db.session.query(Account_created.id).filter_by(username=user).scalar() is not None
-dateexist = db.session.query(Twitter.id).filter_by(DATE = today, username = user).scalar() is not None
-print (exists);
-print(dateexist);
+  if(exists == False):
+   data = Account_created(user,cre)
+   db.session.add(data)
+   db.session.commit()
 
-if(exists == False):
- data = Account_created(user,cre)
- db.session.add(data)
- db.session.commit()
+   insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
+   db.session.add(insdata)
+   db.session.commit()
+  elif(dateexist == False):
+   insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
+   db.session.add(insdata)
+   db.session.commit()
+  elif(dateexist == True):
+   updatedata = Twitter.query.filter_by(username = user, DATE = today).update({"followers_count": (followers), "following_count": (following), "tweet_count": (tweet), "like_count": (like)})
+   db.session.commit()
 
- insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
- db.session.add(insdata)
- db.session.commit()
-elif(dateexist == False):
- insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
- db.session.add(insdata)
- db.session.commit()
-elif(dateexist == True):
- updatedata = Twitter.query.filter_by(username = user, DATE = today).update({"followers_count": (followers), "following_count": (following), "tweet_count": (tweet), "like_count": (like)})
- db.session.commit()
+  r = db.engine.execute('select username,DATE,followers_count,following_count,tweet_count,like_count from Twitter where username = "' + user + '" ORDER BY DATE DESC')
 
-r = db.engine.execute('select username,DATE,followers_count,following_count,tweet_count,like_count from Twitter where username = "' + user + '" ORDER BY DATE DESC')
+  x = [(a,b.strftime('%Y-%m-%d'),c,d,e,f) for (a,b,c,d,e,f) in r]
 
-x = [(a,b.strftime('%Y-%m-%d'),c,d,e,f) for (a,b,c,d,e,f) in r]
+  y = [(x[i][2]-x[i-1][2],x[i][3]-x[i-1][3],x[i][4]-x[i-1][4])for i in range(len(x)-1)] + [(0,0,0)]
 
-y = [(x[i][2]-x[i-1][2],x[i][3]-x[i-1][3],x[i][4]-x[i-1][4])for i in range(len(x)-1)] + [(0,0,0)]
+  z = [(x[i][0], x[i][1],
+    x[i][2], y[i][0],
+    x[i][3], y[i][1],
+    x[i][4], y[i][2])
+    for i in range(len(x))]
 
-z = [(x[i][0], x[i][1],
-  x[i][2], y[i][0],
-  x[i][3], y[i][1],
-  x[i][4], y[i][2])
-  for i in range(len(x))]
+  print (z)
 
-print (z)
+# make a new function here with a decorator implies an internal variable called "name"
+@app.route('/<name>')
+def flask_json(name):
+    return insert_data(name)
 
 # driver function 
 if __name__ == '__main__':
