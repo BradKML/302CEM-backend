@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Resource, Api 
 import datetime
 from datetime import date
+import flask
 
 #setting the api
 def start_api(consumer_key, consumer_secret,
@@ -25,7 +26,7 @@ my_api = start_api(ck,cs,at,ats)
 # creating the flask app 
 app = Flask(__name__) 
 
-def get_user_info(api, name):
+def get_user_info(name):
   user = api.get_user(screen_name = name) 
   return {"username": user.name,
             "creation date": user.created_at.strftime('%Y-%m-%d'),
