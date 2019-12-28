@@ -9,7 +9,8 @@ from datetime import date
 
 # creating the flask app 
 app = Flask(__name__) 
-#api
+
+#setting the api
 def start_api(consumer_key, consumer_secret,
   access_token, access_token_secret):
 
@@ -17,6 +18,7 @@ def start_api(consumer_key, consumer_secret,
   auth.set_access_token(access_token, access_token_secret)  
   return tweepy.API(auth)
 
+#api authentication key
 ck="DxHoukAprUS9cgUXR4yLPfy5n"
 cs="2s1fiLCR4QGdlBVkDPh0WQgGOWA6rmcFIE5wzY5nYa1AsSayn2"
 at="1207894049106956288-vVSh9pHeHm0GRKRXTNxnVVM9Ep1aiD"
@@ -24,18 +26,18 @@ ats="FY40u4cNBixTBzl5n9lH4847IGz5vCbHSBbYH9BNrK2g1"
 
 my_api = start_api(ck,cs,at,ats)
 
-#idname = "Facebook"
+#name = "Facebook"
 
 @app.route('/<name>')
 def get_user_info(api, name):
     
   user = api.get_user(screen_name = name) 
   return [user.name, user.created_at.strftime('%Y-%m-%d'),user.followers_count, user.friends_count,
-    user.statuses_count]
+    user.statuses_count, user.favourites_count]
 
-print(get_user_info(my_api, idname))
+print(get_user_info(my_api, name))
 
-user, cre, followers, following, tweet = get_user_info(my_api, idname)
+user, cre, followers, following, tweet, like = get_user_info(my_api, name)
 
 #insert the data in the mysql
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:P@ssw0rd123@127.0.0.1/twitter'
@@ -62,13 +64,15 @@ class Twitter(db.Model):
     followers_count = db.Column('followers_count', db.Integer)
     following_count = db.Column('following_count', db.Integer)
     tweet_count = db.Column('tweet_count', db.Integer)
+    like_count = db.Column('like_count', db.Integer)
 
-    def __init__(self, username, DATE, followers_count, following_count, tweet_count):
+    def __init__(self, username, DATE, followers_count, following_count, tweet_count, like_count):
         self.username = username
         self.DATE = DATE
         self.followers_count = followers_count
         self.following_count = following_count
         self.tweet_count = tweet_count
+        self.like_count = like_count
 
 today = date.today()
 exists = db.session.query(Account_created.id).filter_by(username=user).scalar() is not None
@@ -81,15 +85,15 @@ if(exists == False):
  db.session.add(data)
  db.session.commit()
 
- insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet)
+ insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
  db.session.add(insdata)
  db.session.commit()
 elif(dateexist == False):
- insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet)
+ insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
  db.session.add(insdata)
  db.session.commit()
 
-r = db.engine.execute('select username,DATE,followers_count,following_count,tweet_count from Twitter where username = "' + user + '" ORDER BY DATE DESC')
+r = db.engine.execute('select username,DATE,followers_count,following_count,tweet_count,like_count from Twitter where username = "' + user + '" ORDER BY DATE DESC')
 
 x = [(a,b.strftime('%Y-%m-%d'),c,d,e) for (a,b,c,d,e) in r]
 
