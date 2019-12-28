@@ -9,7 +9,7 @@ from datetime import date
 
 # creating the flask app 
 app = Flask(__name__) 
-
+#api
 def start_api(consumer_key, consumer_secret,
   access_token, access_token_secret):
 
@@ -30,21 +30,12 @@ my_api = start_api(ck,cs,at,ats)
 def get_user_info(api, name):
     
   user = api.get_user(screen_name = name) 
-  return [user.name, user.created_at.strftime('%Y-%m-%d')]
+  return [user.name, user.created_at.strftime('%Y-%m-%d'),user.followers_count, user.friends_count,
+    user.statuses_count]
 
 print(get_user_info(my_api, idname))
 
-user, cre = get_user_info(my_api, idname)
-
-def get_daily_info(api, name):
-
-  user = api.get_user(screen_name = name)  
-  return [user.followers_count, user.friends_count,
-    user.statuses_count]
-
-print(get_daily_info(my_api, idname))
-
-followers, following, tweet =  get_daily_info(my_api, idname)
+user, cre, followers, following, tweet = get_user_info(my_api, idname)
 
 #insert the data in the mysql
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:P@ssw0rd123@127.0.0.1/twitter'
