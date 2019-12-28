@@ -26,26 +26,22 @@ ats="FY40u4cNBixTBzl5n9lH4847IGz5vCbHSBbYH9BNrK2g1"
 
 my_api = start_api(ck,cs,at,ats)
 
-#name = "Facebook"
-
-@app.route('/<name>')
 def get_user_info(api, name):
     
   user = api.get_user(screen_name = name) 
-  return [user.name, user.created_at.strftime('%Y-%m-%d'),user.followers_count, user.friends_count,
-    user.statuses_count, user.favourites_count]
-
-print(get_user_info(my_api, name))
-
-user, cre, followers, following, tweet, like = get_user_info(my_api, name)
+  return {"username": user.name,
+            "creation date": user.created_at.strftime('%Y-%m-%d'),
+            "followers count": user.followers_count,
+            "following count": user.friends_count,
+            "tweet count": user.statuses_count,
+            "like count": user.favourites_count}
 
 #insert the data in the mysql
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:P@ssw0rd123@127.0.0.1/twitter'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 db = SQLAlchemy(app)
 
-class Account_created(db.Model):
+class Account_created(db.Model): # create table Account_created
     __tablename__ = 'Account_created'
     id = db.Column('id', db.Integer, primary_key=True)
     username = db.Column('username', db.String(50))
@@ -55,8 +51,7 @@ class Account_created(db.Model):
         self.username = username
         self.created_at = created_at
 
-
-class Twitter(db.Model):
+class Twitter(db.Model): # create table twitter
     __tablename__ = 'Twitter'
     id = db.Column('id', db.Integer, primary_key=True)
     username = db.Column('username', db.String(50))
@@ -76,28 +71,32 @@ class Twitter(db.Model):
         
 def insert_data(name):
   
+  info = get_api_info(name)#get_api_info
+  # try to separate the value that the api returns, but can't get them when i was using app.route, so that i can insert it into mysql database
   today = date.today()
-  exists = db.session.query(Account_created.id).filter_by(username=user).scalar() is not None
-  dateexist = db.session.query(Twitter.id).filter_by(DATE = today, username = user).scalar() is not None
+  exists = db.session.query(Account_created.id).filter_by(username=user).scalar() is not None # exists tests if the user exists in the database or not
+  dateexist = db.session.query(Twitter.id).filter_by(DATE = today, username = user).scalar() is not None # dateexist tests if the current datapoint exitss in the database or not
   print (exists);
   print(dateexist);
 
-  if(exists == False):
+  if(exists == False):# create new information
    data = Account_created(user,cre)
    db.session.add(data)
    db.session.commit()
-
+   # the next three lines are used to add data into the database
    insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
    db.session.add(insdata)
    db.session.commit()
-  elif(dateexist == False):
+    
+  elif(dateexist == False):#add a new day data
    insdata = Twitter(user,today.strftime('%Y-%m-%d'),followers,following,tweet,like)
    db.session.add(insdata)
    db.session.commit()
-  elif(dateexist == True):
+  
+  elif(dateexist == True):#update query when there has changes that day
    updatedata = Twitter.query.filter_by(username = user, DATE = today).update({"followers_count": (followers), "following_count": (following), "tweet_count": (tweet), "like_count": (like)})
    db.session.commit()
-
+  # the followine line is used to get data from the database
   r = db.engine.execute('select username,DATE,followers_count,following_count,tweet_count,like_count from Twitter where username = "' + user + '" ORDER BY DATE DESC')
 
   x = [(a,b.strftime('%Y-%m-%d'),c,d,e,f) for (a,b,c,d,e,f) in r]
