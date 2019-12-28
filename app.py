@@ -27,7 +27,7 @@ my_api = start_api(ck,cs,at,ats)
 app = Flask(__name__) 
 
 def get_user_info(name):
-  user = api.get_user(screen_name = name) 
+  user = my_api.get_user(screen_name = name) 
   return {"username": user.name,
             "creation date": user.created_at.strftime('%Y-%m-%d'),
             "followers count": user.followers_count,
@@ -70,11 +70,11 @@ class Twitter(db.Model): # create table twitter
         
 def insert_data(name):
   # this line is for actualy getting data from the API
-  info = get_api_info(name)#get_api_info
+  info = get_user_info(name)#get_api_info
   # try to separate the value that the api returns, but can't get them when i was using app.route, so that i can insert it into mysql database
   today = date.today()
-  exists = db.session.query(Account_created.id).filter_by(username=user).scalar() is not None # exists tests if the user exists in the database or not
-  dateexist = db.session.query(Twitter.id).filter_by(DATE = today, username = user).scalar() is not None # dateexist tests if the current datapoint exitss in the database or not
+  exists = db.session.query(Account_created.id).filter_by(username=info["username"]).scalar() is not None # exists tests if the user exists in the database or not
+  dateexist = db.session.query(Twitter.id).filter_by(DATE = today, username = info["username"]).scalar() is not None # dateexist tests if the current datapoint exitss in the database or not
   #print (exists);
   #print(dateexist);
 
@@ -94,11 +94,11 @@ def insert_data(name):
    db.session.commit()
   
   elif(dateexist == True):#update query when there has changes in that day data
-   updatedata = Twitter.query.filter_by(username = user, DATE = today).update(username = info["username"], DATE = today).update({"followers_count": (info["followers count"]), "following_count": (info["following count"]),"tweet_count": (info["tweet count"]), "like_count": (info["like count"])})
+   updatedata = Twitter.query.filter_by(username = info["username"], DATE = today).update({"followers_count": (info["followers count"]), "following_count": (info["following count"]),"tweet_count": (info["tweet count"]), "like_count": (info["like count"])})
    db.session.commit()
     
   # the followine line is used to get data from the database
-  r = db.engine.execute('select username,DATE,followers_count,following_count,tweet_count,like_count from Twitter where username = "' + user + '" ORDER BY DATE DESC')
+  r = db.engine.execute('select username,DATE,followers_count,following_count,tweet_count,like_count from Twitter where username = "' + info["username"] + '" ORDER BY DATE DESC')
   
   # in here, x, y and z are the partial return values
   x = [{"date":i[1].strftime('%Y-%m-%d'),"followers":i[2],"following":i[3],"tweets":i[4]} for i in r] #just loop 
